@@ -1,144 +1,1019 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Assistant</title>
+<!DOCTYPE html>
+<html lang="en">
 
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+    <title>Stock Assistant</title>
 
-</head> <body>
+    <link rel="stylesheet" href="/static/style.css">
+
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+</head>
+
+<body>
+
 <main class="container">
 
-    <h1>Stock Assistant</h1>
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
 
-    <p class="subtitle">
-        Check a stock's latest market data.
-    </p>
+    <header>
+        <h1>Stock Assistant</h1>
 
-    <form method="GET" action="/">
+        <p class="subtitle">
+            AI-powered stock research and analysis
+        </p>
+    </header>
+
+
+    <!-- =====================================================
+         SEARCH
+         ===================================================== -->
+
+    <form method="GET" action="/" class="search-form">
+
         <input
             type="text"
             name="symbol"
             placeholder="Enter stock symbol"
             value="{{ symbol }}"
+            autocomplete="off"
             required
         >
 
         <button type="submit">
-            Search
+            Analyze Stock
         </button>
+
     </form>
+
 
     {% if stock %}
 
-    <section class="card">
 
-        <h2>{{ stock.symbol }}</h2>
+    <!-- =====================================================
+         STOCK OVERVIEW
+         ===================================================== -->
 
-        <div class="price">
-            ${{ stock.price }}
+    <section class="card overview-card">
+
+        <div>
+
+            <span class="label">
+                Stock
+            </span>
+
+            <h2>
+                {{ stock.symbol }}
+            </h2>
+
+            <div class="market-status">
+
+                <span class="status-dot"></span>
+
+                <span>
+                    Latest Available
+                </span>
+
+                <span class="status-time">
+                    {{ stock.last_updated }}
+                </span>
+
+            </div>
+
         </div>
+
+
+        <div>
+
+            <div class="price">
+                ${{ "%.2f"|format(stock.price) }}
+            </div>
+
+            <div
+                class="change
+                {% if stock.change >= 0 %}
+                    positive
+                {% else %}
+                    negative
+                {% endif %}"
+            >
+
+                {% if stock.change >= 0 %}
+                    +${{ "%.2f"|format(stock.change) }}
+                {% else %}
+                    -${{ "%.2f"|format(stock.change|abs) }}
+                {% endif %}
+
+                (
+
+                {% if stock.change_percent >= 0 %}
+                    +{{ "%.2f"|format(stock.change_percent) }}%
+                {% else %}
+                    {{ "%.2f"|format(stock.change_percent) }}%
+                {% endif %}
+
+                )
+
+            </div>
+
+        </div>
+
 
         <div class="stats">
 
             <div>
                 <span>Open</span>
-                <strong>${{ stock.open }}</strong>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.open) }}
+                </strong>
             </div>
+
 
             <div>
                 <span>High</span>
-                <strong>${{ stock.high }}</strong>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.high) }}
+                </strong>
             </div>
+
 
             <div>
                 <span>Low</span>
-                <strong>${{ stock.low }}</strong>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.low) }}
+                </strong>
             </div>
 
         </div>
 
     </section>
 
+
+    <!-- =====================================================
+         PRICE HISTORY
+         ===================================================== -->
+
     <section class="card">
 
-        <h2>{{ stock.symbol }} — 1 Month</h2>
+        <h2>
+            Price History
+        </h2>
 
         <div
             id="stock-chart"
-            style="width: 100%; height: 400px;"
+            class="chart"
+        ></div>
+
+        <div
+            id="chart-data"
+            data-chart='{{ stock.chart | tojson }}'
+            hidden
         ></div>
 
     </section>
 
-    <div
-        id="chart-data"
-        data-chart='{{ stock.chart | tojson }}'
-        hidden
-    ></div>
 
-    <script>
-        const chartElement = document.getElementById("chart-data");
+    <!-- =====================================================
+         AI PREDICTION
+         ===================================================== -->
 
-        const chartData = JSON.parse(
-            chartElement.dataset.chart
-        );
+    <section class="card prediction-card">
 
-        const dates = chartData.map(function(point) {
-            return point.date;
-        });
+        <div class="section-heading">
 
-        const prices = chartData.map(function(point) {
-            return point.price;
-        });
+            <div>
 
-        const trace = {
-            x: dates,
-            y: prices,
-            type: "scatter",
-            mode: "lines",
-            line: {
-                color: "#2563eb",
-                width: 3
-            }
-        };
+                <span class="label">
+                    Machine Learning
+                </span>
 
-        const layout = {
-            title: "1 Month Price History",
-            margin: {
-                l: 50,
-                r: 20,
-                t: 50,
-                b: 50
-            },
-            xaxis: {
-                title: "Date"
-            },
-            yaxis: {
-                title: "Price ($)"
-            }
-        };
+                <h2>
+                    AI Prediction
+                </h2>
 
-        Plotly.newPlot(
-            "stock-chart",
-            [trace],
-            layout,
-            {
-                responsive: true
-            }
-        );
-    </script>
+            </div>
+
+
+            <div
+                class="prediction-signal
+                {{ stock.prediction.signal|lower }}"
+            >
+
+                {% if stock.prediction.signal == "Bullish" %}
+
+                    Bullish (Rising)
+
+                {% elif stock.prediction.signal == "Bearish" %}
+
+                    Bearish (Decreasing)
+
+                {% else %}
+
+                    Neutral
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             PREDICTION METRICS
+             ================================================= -->
+
+        <div class="prediction-metrics">
+
+            <div>
+
+                <span>
+                    Confidence
+                </span>
+
+                <strong>
+                    {{ stock.prediction.confidence }}%
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Target Price
+                </span>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.prediction.target_price) }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Expected Change
+                </span>
+
+                <strong
+                    class="
+                    {% if stock.prediction.target_change_percent >= 0 %}
+                        positive
+                    {% else %}
+                        negative
+                    {% endif %}
+                    "
+                >
+
+                    {% if stock.prediction.target_change_percent >= 0 %}
+
+                        +{{ "%.2f"|format(stock.prediction.target_change_percent) }}%
+
+                    {% else %}
+
+                        {{ "%.2f"|format(stock.prediction.target_change_percent) }}%
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Model Score
+                </span>
+
+                <strong>
+                    {{ stock.prediction.score }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             MODEL ANALYSIS
+             ================================================= -->
+
+        <h3>
+            Model Analysis
+        </h3>
+
+        <ul class="prediction-reasons">
+
+            {% for reason in stock.prediction.reasons %}
+
+            <li>
+                {{ reason }}
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+
+        <!-- =================================================
+             PREDICTION PROBABILITIES
+             ================================================= -->
+
+        <h3>
+            Prediction Probabilities
+        </h3>
+
+        <div class="probability-grid">
+
+            <div>
+
+                <span>
+                    Bullish (Rising)
+                </span>
+
+                <strong>
+                    {{ stock.prediction.bullish_score }}%
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Bearish (Decreasing)
+                </span>
+
+                <strong>
+                    {{ stock.prediction.bearish_score }}%
+                </strong>
+
+            </div>
+
+
+            {% if stock.prediction.neutral_probability is defined %}
+
+            <div>
+
+                <span>
+                    Neutral
+                </span>
+
+                <strong>
+                    {{ (stock.prediction.neutral_probability * 100)|round(2) }}%
+                </strong>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         5-DAY FORECAST
+         ===================================================== -->
+
+    <section class="card forecast-card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <span class="label">
+                    Machine Learning
+                </span>
+
+                <h2>
+                    5-Day AI Forecast
+                </h2>
+
+                <p class="muted">
+                    Projected daily price movement from the trained model.
+                </p>
+
+            </div>
+
+
+            <div class="chart-badge">
+
+                {{ stock.prediction.signal }}
+
+                ·
+
+                {{ stock.prediction.confidence }}% confidence
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             FORECAST DAYS
+             ================================================= -->
+
+        <div class="forecast-grid">
+
+            {% for forecast in stock.prediction.daily_forecast %}
+
+            <div
+                class="forecast-day
+                {% if forecast.change_percent >= 0 %}
+                    forecast-positive
+                {% else %}
+                    forecast-negative
+                {% endif %}"
+            >
+
+                <!-- DAY -->
+
+                <div class="forecast-day-number">
+                    DAY {{ forecast.day }}
+                </div>
+
+
+                <!-- PROJECTED PRICE -->
+
+                <div class="forecast-price">
+
+                    ${{ "%.2f"|format(forecast.price) }}
+
+                </div>
+
+
+                <!-- =================================================
+                     DOLLAR CHANGE
+
+                     IMPORTANT:
+                     Use forecast.dollar_change from Python instead
+                     of calculating forecast.price - stock.price.
+
+                     Four decimals are shown so small movements
+                     such as GPRO's can actually be seen.
+                     ================================================= -->
+
+                <div
+                    class="forecast-dollar
+                    {% if forecast.dollar_change >= 0 %}
+                        positive
+                    {% else %}
+                        negative
+                    {% endif %}"
+                >
+
+                    {% if forecast.dollar_change >= 0 %}
+
+                        +${{ "%.4f"|format(forecast.dollar_change) }}
+
+                    {% else %}
+
+                        -${{ "%.4f"|format(forecast.dollar_change|abs) }}
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- PERCENTAGE CHANGE -->
+
+                <div
+                    class="forecast-change
+                    {% if forecast.change_percent >= 0 %}
+                        positive
+                    {% else %}
+                        negative
+                    {% endif %}"
+                >
+
+                    {% if forecast.change_percent >= 0 %}
+
+                        +{{ "%.2f"|format(forecast.change_percent) }}%
+
+                    {% else %}
+
+                        {{ "%.2f"|format(forecast.change_percent) }}%
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- SIGNAL -->
+
+                <div class="forecast-signal">
+
+                    {% if forecast.signal == "Bullish" %}
+
+                        Bullish (Rising)
+
+                    {% elif forecast.signal == "Bearish" %}
+
+                        Bearish (Decreasing)
+
+                    {% else %}
+
+                        Neutral
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- CONFIDENCE -->
+
+                <div class="forecast-confidence">
+
+                    {{ forecast.confidence }}% confidence
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         TECHNICAL ANALYSIS
+         ===================================================== -->
+
+    <section class="card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <span class="label">
+                    Technical Analysis
+                </span>
+
+                <h2>
+                    Indicators
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="indicator-grid">
+
+            <div>
+                <span>SMA 5</span>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.indicators.sma_5) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>SMA 20</span>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.indicators.sma_20) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>EMA 12</span>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.indicators.ema_12) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>EMA 26</span>
+
+                <strong>
+                    ${{ "%.2f"|format(stock.indicators.ema_26) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>RSI</span>
+
+                <strong>
+                    {{ "%.2f"|format(stock.indicators.rsi) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>ATR</span>
+
+                <strong>
+                    {{ "%.2f"|format(stock.indicators.atr) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>MACD</span>
+
+                <strong>
+                    {{ "%.2f"|format(stock.indicators.macd) }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Momentum</span>
+
+                <strong>
+                    {{ "%.2f"|format(stock.indicators.momentum) }}%
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Volume Ratio</span>
+
+                <strong>
+                    {{ "%.2f"|format(stock.indicators.volume_ratio) }}x
+                </strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         INVESTMENT CALCULATOR
+         ===================================================== -->
+
+    <section class="card calculator">
+
+        <h2>
+            Investment Calculator
+        </h2>
+
+        <p class="muted">
+            Estimate the potential value based on the model's
+            projected change.
+        </p>
+
+
+        <label for="investment-amount">
+            Investment Amount
+        </label>
+
+
+        <div class="investment-input">
+
+            <span>
+                $
+            </span>
+
+            <input
+                id="investment-amount"
+                type="number"
+                value="1000"
+                min="1"
+                step="100"
+            >
+
+        </div>
+
+
+        <div class="prediction-metrics">
+
+            <div>
+
+                <span>
+                    Estimated Gain/Loss
+                </span>
+
+                <strong id="estimated-gain">
+                    $0.00
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Estimated Future Value
+                </span>
+
+                <strong id="estimated-value">
+                    $0.00
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="prediction-data"
+            data-expected-change="{{ stock.prediction.target_change_percent }}"
+            hidden
+        ></div>
+
+
+        <p class="calculator-note">
+
+            This is an estimate based on the model's projected
+            price movement, not a guaranteed return.
+
+        </p>
+
+    </section>
+
 
     {% else %}
 
-    <p class="error">
-        Stock data could not be found.
-    </p>
+
+    <!-- =====================================================
+         WELCOME
+         ===================================================== -->
+
+    <section class="card welcome">
+
+        <div class="welcome-icon">
+            📈
+        </div>
+
+        <h2>
+            Analyze a Stock
+        </h2>
+
+        <p>
+
+            Enter a stock symbol above to view market data,
+            technical indicators, price history, and AI analysis.
+
+        </p>
+
+        <div class="examples">
+
+            Try:
+            <strong>AAPL</strong> ·
+            <strong>MSFT</strong> ·
+            <strong>NVDA</strong> ·
+            <strong>TSLA</strong>
+
+        </div>
+
+    </section>
+
 
     {% endif %}
 
 </main>
 
-</body> </html>
+
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+
+/* ============================================================
+   PRICE CHART
+   ============================================================ */
+
+const chartElement =
+    document.getElementById("chart-data");
+
+
+if (chartElement) {
+
+    const data =
+        JSON.parse(
+            chartElement.dataset.chart
+        );
+
+
+    const dates =
+        data.map(
+            point => point.date
+        );
+
+
+    const prices =
+        data.map(
+            point => point.price
+        );
+
+
+    Plotly.newPlot(
+
+        "stock-chart",
+
+        [
+            {
+                x: dates,
+                y: prices,
+
+                type: "scatter",
+                mode: "lines",
+
+                line: {
+                    color: "#4f8cff",
+                    width: 3
+                },
+
+                fill: "tozeroy",
+
+                fillcolor:
+                    "rgba(79,140,255,0.10)",
+
+                hovertemplate:
+                    "<b>%{x}</b><br>" +
+                    "$%{y:.2f}" +
+                    "<extra></extra>"
+            }
+        ],
+
+        {
+
+            paper_bgcolor:
+                "rgba(0,0,0,0)",
+
+            plot_bgcolor:
+                "rgba(0,0,0,0)",
+
+            font: {
+                color: "#f4f7fb"
+            },
+
+            margin: {
+                l: 55,
+                r: 20,
+                t: 20,
+                b: 45
+            },
+
+            xaxis: {
+                gridcolor:
+                    "rgba(255,255,255,0.06)"
+            },
+
+            yaxis: {
+                gridcolor:
+                    "rgba(255,255,255,0.06)",
+
+                tickprefix: "$"
+            }
+
+        },
+
+        {
+
+            responsive: true,
+
+            displayModeBar: false
+
+        }
+
+    );
+
+}
+
+
+/* ============================================================
+   INVESTMENT CALCULATOR
+   ============================================================ */
+
+const predictionElement =
+    document.getElementById(
+        "prediction-data"
+    );
+
+
+const investmentInput =
+    document.getElementById(
+        "investment-amount"
+    );
+
+
+const estimatedGain =
+    document.getElementById(
+        "estimated-gain"
+    );
+
+
+const estimatedValue =
+    document.getElementById(
+        "estimated-value"
+    );
+
+
+if (
+
+    predictionElement &&
+    investmentInput &&
+    estimatedGain &&
+    estimatedValue
+
+) {
+
+    const expectedChange =
+        Number(
+            predictionElement.dataset.expectedChange
+        );
+
+
+    function updateCalculator() {
+
+        const amount =
+            Number(
+                investmentInput.value
+            ) || 0;
+
+
+        const gain =
+            amount *
+            expectedChange /
+            100;
+
+
+        const futureValue =
+            amount +
+            gain;
+
+
+        /* Gain/Loss */
+
+        if (gain >= 0) {
+
+            estimatedGain.textContent =
+                "+$" +
+                gain.toFixed(2);
+
+            estimatedGain.style.color =
+                "#4ade80";
+
+        } else {
+
+            estimatedGain.textContent =
+                "-$" +
+                Math.abs(gain).toFixed(2);
+
+            estimatedGain.style.color =
+                "#f87171";
+
+        }
+
+
+        /* Future value */
+
+        estimatedValue.textContent =
+            "$" +
+            futureValue.toFixed(2);
+
+
+        if (futureValue >= amount) {
+
+            estimatedValue.style.color =
+                "#4ade80";
+
+        } else {
+
+            estimatedValue.style.color =
+                "#f87171";
+
+        }
+
+    }
+
+
+    investmentInput.addEventListener(
+        "input",
+        updateCalculator
+    );
+
+
+    updateCalculator();
+
+}
+
+</script>
+
+
+</body>
+
+</html>
