@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Stock Assistant</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <main class="container">
+
+        <h1>Stock Assistant</h1>
+
+        <p class="subtitle">
+            Check a stock's latest market data.
+        </p>
+
+        <form method="GET" action="/">
+            <input
+                type="text"
+                name="symbol"
+                placeholder="Enter stock symbol"
+                value="{{ symbol }}"
+                required
+            >
+
+            <button type="submit">
+                Search
+            </button>
+        </form>
+
+        {% if stock %}
+
+        <section class="card">
+
+            <h2>{{ stock.symbol }}</h2>
+
+            <div class="price">
+                ${{ stock.price }}
+            </div>
+
+            <div class="stats">
+
+                <div>
+                    <span>Open</span>
+                    <strong>${{ stock.open }}</strong>
+                </div>
+
+                <div>
+                    <span>High</span>
+                    <strong>${{ stock.high }}</strong>
+                </div>
+
+                <div>
+                    <span>Low</span>
+                    <strong>${{ stock.low }}</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+        {% else %}
+
+        <p class="error">
+            Stock data could not be found.
+        </p>
+
+        {% endif %}
+
+    </main>
+
+</body>
+</html>
