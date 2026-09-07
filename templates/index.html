@@ -1,81 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Assistant</title>
 
-    <title>Stock Assistant</title>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-</head>
+<script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
 
-<body>
+</head> <body>
+<main class="container">
 
-    <main class="container">
+    <h1>Stock Assistant</h1>
 
-        <h1>Stock Assistant</h1>
+    <p class="subtitle">
+        Check a stock's latest market data.
+    </p>
 
-        <p class="subtitle">
-            Check a stock's latest market data.
-        </p>
+    <form method="GET" action="/">
+        <input
+            type="text"
+            name="symbol"
+            placeholder="Enter stock symbol"
+            value="{{ symbol }}"
+            required
+        >
 
-        <form method="GET" action="/">
-            <input
-                type="text"
-                name="symbol"
-                placeholder="Enter stock symbol"
-                value="{{ symbol }}"
-                required
-            >
+        <button type="submit">
+            Search
+        </button>
+    </form>
 
-            <button type="submit">
-                Search
-            </button>
-        </form>
+    {% if stock %}
 
-        {% if stock %}
+    <section class="card">
 
-        <section class="card">
+        <h2>{{ stock.symbol }}</h2>
 
-            <h2>{{ stock.symbol }}</h2>
+        <div class="price">
+            ${{ stock.price }}
+        </div>
 
-            <div class="price">
-                ${{ stock.price }}
+        <div class="stats">
+
+            <div>
+                <span>Open</span>
+                <strong>${{ stock.open }}</strong>
             </div>
 
-            <div class="stats">
-
-                <div>
-                    <span>Open</span>
-                    <strong>${{ stock.open }}</strong>
-                </div>
-
-                <div>
-                    <span>High</span>
-                    <strong>${{ stock.high }}</strong>
-                </div>
-
-                <div>
-                    <span>Low</span>
-                    <strong>${{ stock.low }}</strong>
-                </div>
-
+            <div>
+                <span>High</span>
+                <strong>${{ stock.high }}</strong>
             </div>
 
-        </section>
+            <div>
+                <span>Low</span>
+                <strong>${{ stock.low }}</strong>
+            </div>
 
-        {% else %}
+        </div>
 
-        <p class="error">
-            Stock data could not be found.
-        </p>
+    </section>
 
-        {% endif %}
+    <section class="card">
 
-    </main>
+        <h2>{{ stock.symbol }} — 1 Month</h2>
 
-</body>
-</html>
+        <div
+            id="stock-chart"
+            style="width: 100%; height: 400px;"
+        ></div>
+
+    </section>
+
+    <div
+        id="chart-data"
+        data-chart='{{ stock.chart | tojson }}'
+        hidden
+    ></div>
+
+    <script>
+        const chartElement = document.getElementById("chart-data");
+
+        const chartData = JSON.parse(
+            chartElement.dataset.chart
+        );
+
+        const dates = chartData.map(function(point) {
+            return point.date;
+        });
+
+        const prices = chartData.map(function(point) {
+            return point.price;
+        });
+
+        const trace = {
+            x: dates,
+            y: prices,
+            type: "scatter",
+            mode: "lines",
+            line: {
+                color: "#2563eb",
+                width: 3
+            }
+        };
+
+        const layout = {
+            title: "1 Month Price History",
+            margin: {
+                l: 50,
+                r: 20,
+                t: 50,
+                b: 50
+            },
+            xaxis: {
+                title: "Date"
+            },
+            yaxis: {
+                title: "Price ($)"
+            }
+        };
+
+        Plotly.newPlot(
+            "stock-chart",
+            [trace],
+            layout,
+            {
+                responsive: true
+            }
+        );
+    </script>
+
+    {% else %}
+
+    <p class="error">
+        Stock data could not be found.
+    </p>
+
+    {% endif %}
+
+</main>
+
+</body> </html>
